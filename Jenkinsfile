@@ -1,34 +1,26 @@
 pipeline {
-    agent {
-        docker {
-            image 'node:18-alpine'
-            args '-u root:root' // optional: avoid permission issues
-        }
-    }
+    agent any
 
     environment {
         npm_config_cache = './.npm-cache'
     }
 
     stages {
-        stage('Build') {
+        stage('Build and Test inside Docker') {
             steps {
-                sh '''
-                    ls -la
-                    node --version
-                    npm --version
-                    npm ci
-                    npm run build
-                    ls -la
-                '''
-            }
-        }
-        stage('Test') {
-            steps {
-                sh '''
-                    test -f build/index.html
-                    npm test
-                '''
+                script {
+                    docker.image('node:18-alpine').inside('-u root:root') {
+                        sh '''
+                            ls -la
+                            node --version
+                            npm --version
+                            npm ci
+                            npm run build
+                            test -f build/index.html
+                            npm test
+                        '''
+                    }
+                }
             }
         }
     }

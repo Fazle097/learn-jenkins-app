@@ -1,17 +1,17 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:18-alpine'
+            args '-u root:root' // optional: avoid permission issues
+        }
+    }
+
+    environment {
+        npm_config_cache = './.npm-cache'
+    }
 
     stages {
         stage('Build') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
-            environment {
-                npm_config_cache = './.npm-cache' // Avoid permission issue
-            }
             steps {
                 sh '''
                     ls -la
@@ -23,8 +23,8 @@ pipeline {
                 '''
             }
         }
-        stage('Test'){
-            steps{
+        stage('Test') {
+            steps {
                 sh '''
                     test -f build/index.html
                     npm test
@@ -32,8 +32,9 @@ pipeline {
             }
         }
     }
-    post{
-        always{
+
+    post {
+        always {
             junit 'test-results/junit.xml'
         }
     }
